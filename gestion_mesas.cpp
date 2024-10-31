@@ -94,7 +94,7 @@ void ganAcumuladas(Mesas mesa[], int gananciasAcumuladas)
     cin >> gananciasAcumuladas;
   }
 }
-/*void imprimirMesas(Mesas mesa[], int& cantidadMesas){
+/* void imprimirMesas(Mesas mesa[], int& cantidadMesas){
  for (int i = 1; i < cantidadMesas; i++)
  {
   cout << "Mesa nro " << mesa[i].numero_mesa << endl;
