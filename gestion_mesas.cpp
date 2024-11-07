@@ -11,12 +11,14 @@ struct Mesas
   int ganancias_acumuladas;
 };
 void cargarMesas(Mesas mesa[]);
-bool estaLibre(int numero_mesa);
-
+void ingresaCliente();
+void actualizarGanancia(Mesas mesa[]);
 int main()
 {
   Mesas mesa[15];
   cargarMesas(mesa);
+  ingresaCliente();
+  actualizarGanancia(mesa);
   for (int i = 0; i <= 14; i++)
   {
     cout << mesa[i].numero_mesa << endl;
@@ -43,6 +45,57 @@ void cargarMesas(Mesas mesa[])
         break;
       }
     }
+  }
+}
+
+void ingresaCliente()
+{
+
+  FILE *archivo = fopen("mesas.dat", "rb");
+  if (archivo != NULL)
+  {
+    Mesas mesa;
+    while (fread(&mesa, sizeof(Mesas), 1, archivo) == 1)
+    {
+      if (mesa.esta_libre == 0)
+      {
+        cout << "la mesa nro: " << mesa.numero_mesa << " esta ocupada" << endl;
+      }
+      else if (mesa.esta_libre == 1)
+      {
+        cout << "la mesa nro: " << mesa.numero_mesa << " esta libre" << endl;
+      }
+
+      // parte 1
+      //  informo si hay alguna mesa disponible
+      //  modifico el archivo cambiando la primera mesa libre en ocupada
+      //  una vez modificado, vuelvo a informar los estados de las mesas
+    }
+    fclose(archivo);
+  }
+  else
+  {
+    cout << "error" << endl;
+  }
+}
+
+void actualizarGanancia(Mesas mesa[])
+{
+  FILE *archivo = fopen("mesas.dat", "rb");
+  if (archivo != NULL)
+  {
+    Mesas aux;
+    while (fread(&aux,sizeof(Mesas),1,archivo) == 1)
+    {
+      for (int i = 0; i <= 14; i++)
+      {
+        cout << "Ingrese la ganancia acumulada de la mesa: "<< mesa[i].numero_mesa<<endl;
+        cin >> mesa[i].ganancias_acumuladas;
+        cout << "La ganancia de  la mesa "<<mesa[i].numero_mesa << " es: "<<mesa[i].ganancias_acumuladas<<endl;
+      }
+      
+    }
+    fclose(archivo);
   }
 }
 // Ahora deberia cargar el archivo con el numero de la mesa
@@ -94,7 +147,9 @@ void ganAcumuladas(Mesas mesa[], int gananciasAcumuladas)
     cin >> gananciasAcumuladas;
   }
 }
-/* void imprimirMesas(Mesas mesa[], int& cantidadMesas){
+
+
+ void imprimirMesas(Mesas mesa[], int& cantidadMesas){
  for (int i = 1; i < cantidadMesas; i++)
  {
   cout << "Mesa nro " << mesa[i].numero_mesa << endl;
