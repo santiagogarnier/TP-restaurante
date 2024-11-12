@@ -13,8 +13,8 @@ struct Mesas
 
 int main()
 {
-    Mesas mesa[15];
-    for (int i = 0; i <= 14; i++)
+    Mesas mesa[5];
+    for (int i = 0; i <= 5; i++)
     {
         mesa[i].numero_mesa = i + 1;
         mesa[i].esta_libre = false;
@@ -22,7 +22,7 @@ int main()
     }
 
     FILE *archivo = fopen("mesas.dat", "wb");
-    fwrite(mesa, sizeof(Mesas), 15, archivo);
+    fwrite(mesa, sizeof(Mesas), 5, archivo);
     
 }
 

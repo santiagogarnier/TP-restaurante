@@ -6,156 +6,209 @@ using namespace std;
 
 struct Mesas
 {
-  int numero_mesa;
-  bool esta_libre;
-  int ganancias_acumuladas;
+    int numero_mesa;
+    bool esta_libre;
+    int ganancias_acumuladas;
+    char nombreCliente[50]; // campo p guardar el nombre del cliente, sin esto no asignaba bien las mesas
 };
+
+struct NodoCliente
+{
+    char nombre[50];
+    NodoCliente *siguiente;
+};
+
+//PROTOTIPO DE FUNCIONES
 void cargarMesas(Mesas mesa[]);
-void ingresaCliente();
+void ingresaCliente(Mesas mesa[], NodoCliente *&frente, NodoCliente *&final);
 void actualizarGanancia(Mesas mesa[]);
+void liberarMesa(Mesas mesa[], NodoCliente *&frente, NodoCliente *&final);
+void guardarMesas(Mesas mesa[]);
+void encolar(NodoCliente *&frente, NodoCliente *&final, char nombre[50]);
+void desencolar(NodoCliente *&frente, NodoCliente *&final, char nombre[50]);
+
 int main()
 {
-  Mesas mesa[15];
-  cargarMesas(mesa);
-  ingresaCliente();
-  actualizarGanancia(mesa);
-  for (int i = 0; i <= 14; i++)
-  {
-    cout << mesa[i].numero_mesa << endl;
-    cout << mesa[i].ganancias_acumuladas << endl;
-  }
+    Mesas mesa[15];
+    NodoCliente *frente = NULL;
+    NodoCliente *final = NULL;
+
+    cargarMesas(mesa);
+
+    int opcion;
+    do
+    {
+        cout << "\nMenu de opciones:\n";
+        cout << "1. Asignar cliente a una mesa\n";
+        cout << "2. Actualizar ganancia de una mesa\n";
+        cout << "3. Guardar cambios\n";
+        cout << "4. Liberar mesa\n";
+        cout << "5. Salir\n";
+        cout << "Elija una opcion: ";
+        cin >> opcion;
+        system("cls");
+        switch (opcion)
+        {
+        case 1:
+            ingresaCliente(mesa, frente, final);
+            break;
+        case 2:
+            actualizarGanancia(mesa);
+            break;
+        case 3:
+            guardarMesas(mesa);
+            break;
+        case 4:
+            liberarMesa(mesa, frente, final);
+            break;
+        case 5:
+            cout << "Saliendo del menu...\n";
+            break;
+        default:
+            cout << "Opcion invalida..\n";
+        }
+    } while (opcion != 5);
+
+    return 0;
 }
 
+//Funcion que carga las mesas iniciales desde el archivo
 void cargarMesas(Mesas mesa[])
 {
-  Mesas aux;
-  int i = 0;
-  FILE *archivo = fopen("mesas.dat", "rb");
-  if (archivo != NULL)
-  {
-    while (fread(&aux, sizeof(Mesas), 1, archivo) == 1)
+    for (int i = 0; i < 15; i++)
     {
-      if (i <= 14)
-      {
-        mesa[i] = aux;
-        i++;
-      }
-      else
-      {
-        break;
-      }
+        mesa[i].numero_mesa = i + 1;
+        mesa[i].esta_libre = true;
+        mesa[i].ganancias_acumuladas = 0;
+        strcpy(mesa[i].nombreCliente, "");
     }
-  }
+
+    FILE *archivo = fopen("mesas.dat", "wb");
+    if (archivo)
+    {
+        fwrite(mesa, sizeof(Mesas), 15, archivo);
+        fclose(archivo);
+    }
 }
 
-void ingresaCliente()
+/*esto se encarga de asignar los clientes o a la mesa o a la cola d espera */
+void ingresaCliente(Mesas mesa[], NodoCliente *&frente, NodoCliente *&final)
 {
-
-  FILE *archivo = fopen("mesas.dat", "rb");
-  if (archivo != NULL)
-  {
-    Mesas mesa;
-    while (fread(&mesa, sizeof(Mesas), 1, archivo) == 1)
+    char nombre[50];
+    cout << "Ingrese el nombre del cliente: ";
+    cin >> nombre;
+    /*esta seccion busca la primera mesa libre y se la asigna*/
+    bool mesaAsignada = false;
+    for (int i = 0; i < 15; i++)
     {
-      if (mesa.esta_libre == 0)
-      {
-        cout << "la mesa nro: " << mesa.numero_mesa << " esta ocupada" << endl;
-      }
-      else if (mesa.esta_libre == 1)
-      {
-        cout << "la mesa nro: " << mesa.numero_mesa << " esta libre" << endl;
-      }
-
-      // parte 1
-      //  informo si hay alguna mesa disponible
-      //  modifico el archivo cambiando la primera mesa libre en ocupada
-      //  una vez modificado, vuelvo a informar los estados de las mesas
+        if (mesa[i].esta_libre)
+        {
+            mesa[i].esta_libre = false;
+            strcpy(mesa[i].nombreCliente, nombre);
+            cout << "La mesa nro: " << mesa[i].numero_mesa << " esta ahora ocupada por " << nombre << endl;
+            mesaAsignada = true;
+            break;
+        }
     }
-    fclose(archivo);
-  }
-  else
-  {
-    cout << "error" << endl;
-  }
+    //En caso de que ya no haya mesas libres, encola al siguiente cliente que quiera sentarse
+    if (!mesaAsignada)
+    {
+        encolar(frente, final, nombre);
+        cout << "Cliente " << nombre << " agregado en la cola de espera.\n";
+    }
 }
-
+/*actualiza las ganancias d la mesa especifica q le digas: */
 void actualizarGanancia(Mesas mesa[])
 {
-  FILE *archivo = fopen("mesas.dat", "rb");
-  if (archivo != NULL)
-  {
-    Mesas aux;
-    while (fread(&aux,sizeof(Mesas),1,archivo) == 1)
+    int numeroDeMesa, ganancia;
+    cout << "Ingrese el numero de mesa: ";
+    cin >> numeroDeMesa;
+
+    if (numeroDeMesa < 1 || numeroDeMesa > 15 || mesa[numeroDeMesa - 1].esta_libre)
     {
-      for (int i = 0; i <= 14; i++)
-      {
-        cout << "Ingrese la ganancia acumulada de la mesa: "<< mesa[i].numero_mesa<<endl;
-        cin >> mesa[i].ganancias_acumuladas;
-        cout << "La ganancia de  la mesa "<<mesa[i].numero_mesa << " es: "<<mesa[i].ganancias_acumuladas<<endl;
-      }
-      
+        cout << "La mesa no esta siendo ocupada por nadie.\n";
+        return;
     }
-    fclose(archivo);
-  }
-}
-// Ahora deberia cargar el archivo con el numero de la mesa
-// 2.1 Recorrer el array por cada posicion del array evaluar con un if si esta libre.
-// Si esta libre poner una flag = 1 y una variable numeroMesa que guarde el valor de la mesa
-//* Poner un break en el if para que guarde la primera mesa disponible */
-// despues del for evaluo si la flag es 1 o 0, si es 1 la mesa esta libre, si el flag es 0, todo esta ocupado
-// Si todo esta ocupado, hago la logica de la cola
-/*--2.2. Para el tercer puntito es un pop, se desocupa una mesa y la asigno
- */
-/*--2.3 Es ir cargando el array en el archivo. Recorro uno por uno en el array */
-/*Mesas mesa(int numero_mesa)
-{
-}
-bool estaLibre(Mesas mesa[], int numero_mesa)
-{
-  Mesas mesa;
-  bool estaLibre = false;
 
-  FILE *archivo = fopen("mesas.dat", "rb");
-  if (archivo != NULL)
-  {
-    while (fread(&mesa, sizeof(Mesas), 1, archivo) == 1)
+    cout << "Ingrese la ganancia a agregar: ";
+    cin >> ganancia;
+    mesa[numeroDeMesa - 1].ganancias_acumuladas += ganancia;
+    cout << "Ganancia actualizada. Ganancia acumulada de la mesa " << numeroDeMesa << " es: " << mesa[numeroDeMesa - 1].ganancias_acumuladas << endl;
+}
+
+//Funcion que se encarga de liberar la mesa elegida segun su numero
+void liberarMesa(Mesas mesa[], NodoCliente *&frente, NodoCliente *&final)
+{
+    int numeroDeMesa;
+    cout << "Ingrese el numero de mesa a liberar: ";
+    cin >> numeroDeMesa;
+
+    if (numeroDeMesa < 1 || numeroDeMesa > 15 || mesa[numeroDeMesa - 1].esta_libre)
     {
-      if (mesa->numero_mesa == numero_mesa)
-      {
-        estaLibre = true;
-        break;
-      }
+        cout << "Numero de mesa invalido o ya esta libre.\n";
+        return;
     }
-    fclose(archivo);
-  }
-  if (estaLibre)
-  {
-    cout << "La mesa " << numero_mesa << "se encuentra ocupada " << endl;
-    cout << " La mesa " << numero_mesa << "esta libre, puede sentarse" << endl;
 
-    return estaLibre;
-  }
+    mesa[numeroDeMesa - 1].esta_libre = true;
+    strcpy(mesa[numeroDeMesa - 1].nombreCliente, "");
+    cout << "Mesa " << numeroDeMesa << " liberada.\n";
+    // si hay cola, asigna el primero a esta mesa:
+    if (frente != NULL)
+    {
+        char nombreCliente[50];
+        desencolar(frente, final, nombreCliente);
+        mesa[numeroDeMesa - 1].esta_libre = false;
+        strcpy(mesa[numeroDeMesa - 1].nombreCliente, nombreCliente);
+        cout << "Cliente " << nombreCliente << " asignado a la mesa " << numeroDeMesa << " desde la cola de espera.\n";
+    }
 }
-
-void ganAcumuladas(Mesas mesa[], int gananciasAcumuladas)
+// este void guarda la info actual d las mesas en uso en el archivo:
+void guardarMesas(Mesas mesa[])
 {
-  gananciasAcumuladas = 0;
-
-  for (int i = 1; i < mesa[i].numero_mesa; i++)
-  {
-    cout << "Ingrese la ganancia acumulada de la mesa " << mesa[i].numero_mesa << endl;
-    cin >> gananciasAcumuladas;
-  }
+    FILE *archivo = fopen("mesas.dat", "wb");
+    if (archivo)
+    {
+        fwrite(mesa, sizeof(Mesas), 15, archivo);
+        fclose(archivo);
+        cout << "Datos de las mesas guardados en el archivo.\n";
+    }
+    else
+    {
+        cout << "Error al guardar en el archivo.\n";
+    }
 }
+// Funcion para encolar al cliente a una lista de espera
 
+void encolar(NodoCliente *&frente, NodoCliente *&final, char nombre[50])
+{
+    NodoCliente *nuevoCliente = new NodoCliente;
+    strcpy(nuevoCliente->nombre, nombre);
+    nuevoCliente->siguiente = NULL;
 
- void imprimirMesas(Mesas mesa[], int& cantidadMesas){
- for (int i = 1; i < cantidadMesas; i++)
- {
-  cout << "Mesa nro " << mesa[i].numero_mesa << endl;
-  cout << "-- Estado de la mesa" << mesa[i].esta_libre<< endl;
-  cout << "-- La ganancia acumulada para la mesa "<< mesa[i].numero_mesa << " es de $ "<< endl;//mesa[i].ganancias_acumuladas?;
+    if (final != NULL)
+    {
+        final->siguiente = nuevoCliente;
+    }
+    else
+    {
+        frente = nuevoCliente;
+    }
+    final = nuevoCliente;
+}
+//Funcion para liberar los clientes que ocuapan el numero de una mesa
+void desencolar(NodoCliente *&frente, NodoCliente *&final, char nombre[50])
+{
+    if (frente == NULL)
+        return;
 
- }
+    NodoCliente *aux = frente;
+    strcpy(nombre, frente->nombre);
+    frente = frente->siguiente;
 
-}*/
+    if (frente == NULL)
+    {
+        final = NULL;
+    }
+
+    delete aux;
+}
